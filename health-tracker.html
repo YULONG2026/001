@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>宇龙的健康记录器</title>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        :root{--bg:#f5f5f7;--card:rgba(255,255,255,0.72);--border:rgba(255,255,255,0.5);--blue:#007aff;--purple:#af52de;--cyan:#5ac8fa;--green:#34c759;--orange:#ff9500;--red:#ff3b30;--text:#1d1d1f;--text2:#86868b}
+        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);padding-bottom:env(safe-area-inset-bottom)}
+        .nav{background:var(--card);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:12px 20px;padding-top:max(12px,env(safe-area-inset-top));position:sticky;top:0;z-index:100}
+        .nav-content{display:flex;align-items:center;justify-content:space-between}
+        .nav-title{font-size:20px;font-weight:600}
+        .tabs{display:flex;background:var(--card);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:8px 16px;gap:8px;overflow-x:auto}
+        .tabs::-webkit-scrollbar{display:none}
+        .tab{flex:1;min-width:80px;padding:10px 16px;border-radius:10px;font-size:14px;font-weight:500;text-align:center;cursor:pointer;background:transparent;color:var(--text2);border:none;white-space:nowrap}
+        .tab.active{background:#fff;color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,0.08)}
+        .tab[data-tab="pushup"].active{color:var(--blue)}
+        .tab[data-tab="squat"].active{color:var(--purple)}
+        .tab[data-tab="therapy"].active{color:var(--cyan)}
+        .main{padding:20px;max-width:430px;margin:0 auto}
+        .section{margin-bottom:24px}
+        .section-title{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;padding-left:4px}
+        .card{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:20px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,0.08)}
+        .progress{display:flex;flex-direction:column;align-items:center;padding:24px 20px}
+        .ring-wrap{position:relative;width:180px;height:180px;margin-bottom:20px}
+        .ring{transform:rotate(-90deg)}
+        .ring-bg{fill:none;stroke:rgba(0,0,0,0.05);stroke-width:12}
+        .ring-fill{fill:none;stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset 0.5s ease}
+        .ring-fill.pushup{stroke:var(--blue)}.ring-fill.squat{stroke:var(--purple)}.ring-fill.therapy{stroke:var(--cyan)}
+        .ring-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+        .ring-icon{font-size:32px;margin-bottom:4px}
+        .ring-value{font-size:42px;font-weight:700}
+        .ring-goal{font-size:15px;color:var(--text2);margin-top:4px}
+        .status{font-size:13px;font-weight:600;margin-top:8px;padding:6px 14px;border-radius:20px}
+        .status.pushup{background:rgba(0,122,255,0.12);color:var(--blue)}
+        .status.squat{background:rgba(175,82,222,0.12);color:var(--purple)}
+        .status.therapy{background:rgba(90,200,250,0.12);color:var(--cyan)}
+        .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px}
+        .stat{text-align:center;padding:12px 8px;background:rgba(0,0,0,0.03);border-radius:12px}
+        .stat-icon{font-size:18px;margin-bottom:4px}
+        .stat-value{font-size:20px;font-weight:700}
+        .stat-label{font-size:11px;color:var(--text2);margin-top:2px}
+        .slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+        .slot{padding:12px 4px;border-radius:12px;text-align:center;background:rgba(0,0,0,0.03)}
+        .slot.done{background:var(--green);color:#fff}
+        .slot-time{font-size:11px;font-weight:600;opacity:0.8}
+        .slot-count{font-size:14px;font-weight:700;margin-top:2px}
+        .input{display:flex;flex-direction:column;gap:16px}
+        .stepper{display:flex;align-items:center;justify-content:center;gap:20px}
+        .stepper-btn{width:44px;height:44px;border-radius:12px;border:none;font-size:24px;cursor:pointer;background:rgba(0,0,0,0.05)}
+        .stepper-value{font-size:48px;font-weight:700;min-width:100px;text-align:center}
+        .chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+        .chip{padding:8px 16px;border-radius:20px;font-size:14px;font-weight:500;cursor:pointer;border:1px solid rgba(0,0,0,0.1);background:transparent;color:var(--text2)}
+        .chip.pushup.active,.chip.pushup:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
+        .chip.squat.active,.chip.squat:hover{background:var(--purple);color:#fff;border-color:var(--purple)}
+        .chip.therapy.active,.chip.therapy:hover{background:var(--cyan);color:#fff;border-color:var(--cyan)}
+        .parts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
+        .part{padding:10px 16px;border-radius:20px;font-size:14px;font-weight:500;cursor:pointer;border:1px solid rgba(0,0,0,0.1);background:transparent;display:flex;align-items:center;gap:6px}
+        .part.selected{background:var(--cyan);color:#fff;border-color:var(--cyan)}
+        .part-progress{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
+        .part-item{text-align:center;padding:12px 8px;background:rgba(0,0,0,0.03);border-radius:12px}
+        .part-item.done{background:var(--green);color:#fff}
+        .part-name{font-size:12px;font-weight:600;margin-bottom:4px}
+        .part-time{font-size:16px;font-weight:700}
+        .btn{width:100%;padding:16px;border-radius:14px;font-size:17px;font-weight:600;border:none;cursor:pointer;color:#fff;margin-top:8px}
+        .btn.pushup{background:var(--blue)}.btn.squat{background:var(--purple)}.btn.therapy{background:var(--cyan)}
+        .records{display:flex;flex-direction:column;gap:8px}
+        .record{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(0,0,0,0.03);border-radius:12px}
+        .record-info{display:flex;align-items:center;gap:10px}
+        .record-time{font-size:13px;color:var(--text2)}
+        .record-value{font-size:16px;font-weight:600}
+        .record-del{width:28px;height:28px;border-radius:8px;border:none;background:rgba(255,59,48,0.1);color:var(--red);cursor:pointer;font-size:16px}
+        .history{display:flex;flex-direction:column;gap:10px}
+        .hist{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:rgba(0,0,0,0.03);border-radius:12px}
+        .hist-date{font-size:15px;font-weight:600}
+        .hist-val{font-size:17px;font-weight:700}
+        .hist-badge{font-size:11px;padding:4px 10px;border-radius:12px;font-weight:600;background:var(--orange);color:#fff}
+        .hist-badge.done{background:var(--green)}
+        .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(100px);background:rgba(0,0,0,0.8);backdrop-filter:blur(20px);color:#fff;padding:14px 24px;border-radius:14px;font-size:15px;font-weight:500;opacity:0;transition:all 0.3s;z-index:1000;pointer-events:none}
+        .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+        .empty{text-align:center;padding:40px 20px;color:var(--text2);font-size:14px}
+        .hide{display:none!important}
+    </style>
+</head>
+<body>
+    <nav class="nav"><div class="nav-content"><span style="font-size:24px">💪</span><h1 class="nav-title">宇龙的健康记录器</h1><span style="width:24px"></span></div></nav>
+    <div class="tabs">
+        <button class="tab active" data-tab="pushup">💪 俯卧撑</button>
+        <button class="tab" data-tab="squat">🦵 深蹲</button>
+        <button class="tab" data-tab="therapy">💡 理疗</button>
+    </div>
+    <main class="main">
+        <!-- Pushup -->
+        <div id="pushup-section" class="tab-content">
+            <div class="section">
+                <div class="card progress">
+                    <div class="ring-wrap">
+                        <svg class="ring" width="180" height="180"><circle class="ring-bg" cx="90" cy="90" r="78"/><circle class="ring-fill pushup" cx="90" cy="90" r="78" stroke-dasharray="490" stroke-dashoffset="490"/></svg>
+                        <div class="ring-center"><div class="ring-icon">💪</div><div class="ring-value" id="p-val">0</div><div class="ring-goal">/ 200 个</div></div>
+                    </div>
+                    <div class="status pushup" id="p-status">继续加油 💪</div>
+                    <div class="stats">
+                        <div class="stat"><div class="stat-icon">🎯</div><div class="stat-value" id="p-rem">200</div><div class="stat-label">剩余</div></div>
+                        <div class="stat"><div class="stat-icon">📊</div><div class="stat-value" id="p-pct">0%</div><div class="stat-label">完成率</div></div>
+                        <div class="stat"><div class="stat-icon">🔥</div><div class="stat-value" id="p-ses">0</div><div class="stat-label">组数</div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="section"><div class="section-title">⏰ 今日时间格 (每2小时20个)</div><div class="card"><div class="slots" id="p-slots"></div></div></div>
+            <div class="section"><div class="section-title">📝 记录俯卧撑</div><div class="card input">
+                <div class="stepper"><button class="stepper-btn" onclick="adj('p',-10)">−</button><div class="stepper-value" id="p-inp">20</div><button class="stepper-btn" onclick="adj('p',10)">+</button></div>
+                <div class="chips"><button class="chip pushup" onclick="setv('p',10)">10</button><button class="chip pushup active" onclick="setv('p',20)">20</button><button class="chip pushup" onclick="setv('p',30)">30</button><button class="chip pushup" onclick="setv('p',50)">50</button></div>
+                <button class="btn pushup" onclick="add('pushup')">✓ 记录俯卧撑</button>
+            </div></div>
+            <div class="section"><div class="section-title">📋 今日记录</div><div class="card"><div class="records" id="p-recs"><div class="empty">还没有记录，开始动起来吧！</div></div></div></div>
+            <div class="section"><div class="section-title">📅 历史记录</div><div class="card"><div class="history" id="p-hist"><div class="empty">暂无历史数据</div></div></div></div>
+        </div>
+        <!-- Squat -->
+        <div id="squat-section" class="tab-content hide">
+            <div class="section">
+                <div class="card progress">
+                    <div class="ring-wrap">
+                        <svg class="ring" width="180" height="180"><circle class="ring-bg" cx="90" cy="90" r="78"/><circle class="ring-fill squat" cx="90" cy="90" r="78" stroke-dasharray="490" stroke-dashoffset="490"/></svg>
+                        <div class="ring-center"><div class="ring-icon">🦵</div><div class="ring-value" id="s-val">0</div><div class="ring-goal">/ 200 个</div></div>
+                    </div>
+                    <div class="status squat" id="s-status">继续加油 🦵</div>
+                    <div class="stats">
+                        <div class="stat"><div class="stat-icon">🎯</div><div class="stat-value" id="s-rem">200</div><div class="stat-label">剩余</div></div>
+                        <div class="stat"><div class="stat-icon">📊</div><div class="stat-value" id="s-pct">0%</div><div class="stat-label">完成率</div></div>
+                        <div class="stat"><div class="stat-icon">🔥</div><div class="stat-value" id="s-ses">0</div><div class="stat-label">组数</div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="section"><div class="section-title">⏰ 今日时间格 (每2小时20个)</div><div class="card"><div class="slots" id="s-slots"></div></div></div>
+            <div class="section"><div class="section-title">📝 记录深蹲</div><div class="card input">
+                <div class="stepper"><button class="stepper-btn" onclick="adj('s',-10)">−</button><div class="stepper-value" id="s-inp">20</div><button class="stepper-btn" onclick="adj('s',10)">+</button></div>
+                <div class="chips"><button class="chip squat" onclick="setv('s',10)">10</button><button class="chip squat active" onclick="setv('s',20)">20</button><button class="chip squat" onclick="setv('s',30)">30</button><button class="chip squat" onclick="setv('s',50)">50</button></div>
+                <button class="btn squat" onclick="add('squat')">✓ 记录深蹲</button>
+            </div></div>
+            <div class="section"><div class="section-title">📋 今日记录</div><div class="card"><div class="records" id="s-recs"><div class="empty">还没有记录，开始动起来吧！</div></div></div></div>
+            <div class="section"><div class="section-title">📅 历史记录</div><div class="card"><div class="history" id="s-hist"><div class="empty">暂无历史数据</div></div></div></div>
+        </div>
+        <!-- Therapy -->
+        <div id="therapy-section" class="tab-content hide">
+            <div class="section">
+                <div class="card progress">
+                    <div class="ring-wrap">
+                        <svg class="ring" width="180" height="180"><circle class="ring-bg" cx="90" cy="90" r="78"/><circle class="ring-fill therapy" cx="90" cy="90" r="78" stroke-dasharray="490" stroke-dashoffset="490"/></svg>
+                        <div class="ring-center"><div class="ring-icon">💡</div><div class="ring-value" id="t-val">0</div><div class="ring-goal">/ 60 分钟</div></div>
+                    </div>
+                    <div class="status therapy" id="t-status">开始理疗 💡</div>
+                    <div class="part-progress">
+                        <div class="part-item" id="t-neck"><div class="part-name">🦴 颈椎</div><div class="part-time">0/20</div></div>
+                        <div class="part-item" id="t-belly"><div class="part-name">🫃 腹部</div><div class="part-time">0/20</div></div>
+                        <div class="part-item" id="t-knee"><div class="part-name">🦵 膝盖</div><div class="part-time">0/20</div></div>
+                    </div>
+                </div>
+            </div>
+            <div class="section"><div class="section-title">📝 记录理疗</div><div class="card input">
+                <div class="parts"><button class="part" data-part="neck" onclick="sel('neck')">🦴 颈椎</button><button class="part" data-part="belly" onclick="sel('belly')">🫃 腹部</button><button class="part" data-part="knee" onclick="sel('knee')">🦵 膝盖</button></div>
+                <div class="stepper"><button class="stepper-btn" onclick="adj('t',-5)">−</button><div class="stepper-value" id="t-inp">20</div><button class="stepper-btn" onclick="adj('t',5)">+</button></div>
+                <div class="chips"><button class="chip therapy" onclick="setv('t',10)">10</button><button class="chip therapy active" onclick="setv('t',20)">20</button><button class="chip therapy" onclick="setv('t',30)">30</button></div>
+                <button class="btn therapy" onclick="addt()">✓ 记录理疗</button>
+            </div></div>
+            <div class="section"><div class="section-title">📋 今日记录</div><div class="card"><div class="records" id="t-recs"><div class="empty">还没有记录，开始理疗吧！</div></div></div></div>
+            <div class="section"><div class="section-title">📅 历史记录</div><div class="card"><div class="history" id="t-hist"><div class="empty">暂无历史数据</div></div></div></div>
+        </div>
+    </main>
+    <div class="toast" id="toast"></div>
+    <script>
+const CFG={pushup:{g:200,int:20,slots:['07:00','09:00','11:00','13:00','15:00','17:00','19:00','21:00']},squat:{g:200,int:20,slots:['07:00','09:00','11:00','13:00','15:00','17:00','19:00','21:00']},therapy:{g:60,parts:{neck:20,belly:20,knee:20}}};
+let cur='pushup',selp=null,D=JSON.parse(localStorage.getItem('ht'))||{pushup:{},squat:{},therapy:{}};
+function init(){document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));render();if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();}
+function switchTab(t){cur=t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===t));document.querySelectorAll('.tab-content').forEach(x=>x.classList.toggle('hide',x.id!==t+'-section'));render();}
+function today(){return new Date().toISOString().split('T')[0];}
+function getD(t){const d=today();if(!D[t][d])D[t][d]={r:[]};return D[t][d];}
+function adj(t,d){const e=document.getElementById(t+'-inp'),v=Math.max(1,parseInt(e.textContent)+d);e.textContent=v;updch(t,v);}
+function setv(t,v){document.getElementById(t+'-inp').textContent=v;updch(t,v);}
+function updch(t,v){document.querySelectorAll('.chip.'+(t==='p'?'pushup':t==='s'?'squat':'therapy')).forEach(c=>c.classList.toggle('active',parseInt(c.textContent)===v));}
+function sel(p){selp=selp===p?null:p;document.querySelectorAll('.part').forEach(x=>x.classList.toggle('selected',x.dataset.part===selp));}
+function add(t){const v=parseInt(document.getElementById(t==='pushup'?'p-inp':'s-inp').textContent),d=getD(t);d.r.push({tm:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}),v,ts:Date.now()});save();render();show('已记录 '+v+(t==='pushup'?'个俯卧撑':'个深蹲'));}
+function addt(){if(!selp){show('请先选择部位');return;}const v=parseInt(document.getElementById('t-inp').textContent),d=getD('therapy');d.r.push({tm:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}),v,part:selp,ts:Date.now()});save();render();const n={neck:'颈椎',belly:'腹部',knee:'膝盖'};show('已记录 '+n[selp]+'理疗'+v+'分钟');}
+function del(t,i){getD(t).r.splice(i,1);save();render();show('已删除');}
+function save(){localStorage.setItem('ht',JSON.stringify(D));}
+function render(){renderPS('pushup','p');renderPS('squat','s');renderT();}
+function renderPS(t,pre){const d=getD(t),tot=d.r.reduce((s,x)=>s+x.v,0),pct=Math.min(100,(tot/CFG[t].g)*100);document.getElementById(pre+'-val').textContent=tot;document.getElementById(pre+'-rem').textContent=Math.max(0,CFG[t].g-tot);document.getElementById(pre+'-pct').textContent=Math.round(pct)+'%';document.getElementById(pre+'-ses').textContent=d.r.length;document.querySelector('.ring-fill.'+t).style.strokeDashoffset=490-(490*pct/100);const st=document.getElementById(pre+'-status');if(tot>=CFG[t].g){st.textContent='🎉 目标达成！';st.style.cssText='background:rgba(52,199,89,0.2);color:var(--green)';}else{st.textContent='继续加油 '+(t==='pushup'?'💪':'🦵');st.className='status '+t;}renderslots(t,pre,d.r);renderrecs(t,pre,d.r,t==='pushup'?'个':'个');renderhist(t,pre,CFG[t].g,t==='pushup'?'个':'个');}
+function renderT(){const d=getD('therapy'),p={neck:0,belly:0,knee:0};d.r.forEach(x=>p[x.part]+=x.v);const tot=p.neck+p.belly+p.knee,pct=Math.min(100,(tot/CFG.therapy.g)*100);document.getElementById('t-val').textContent=tot;document.querySelector('.ring-fill.therapy').style.strokeDashoffset=490-(490*pct/100);const st=document.getElementById('t-status');if(tot>=CFG.therapy.g){st.textContent='🎉 全部完成！';st.style.cssText='background:rgba(52,199,89,0.2);color:var(--green)';}else{st.textContent='继续理疗 💡';st.className='status therapy';}['neck','belly','knee'].forEach(x=>{const e=document.getElementById('t-'+x);e.querySelector('.part-time').textContent=p[x]+'/20';e.classList.toggle('done',p[x]>=20);});rendertrecs(d.r);renderthist();}
+function renderslots(t,pre,recs){const slots=CFG[t].slots;document.getElementById(pre+'-slots').innerHTML=slots.map((tm,i)=>{const st=7+i*2,rs=recs.filter(x=>{const h=parseInt(x.tm.split(':')[0]);return h>=st&&h<st+2;}),cnt=rs.reduce((s,x)=>s+x.v,0),done=cnt>=CFG[t].int;return`<div class="slot${done?' done':''}"><div class="slot-time">${tm}</div><div class="slot-count">${cnt}</div></div>`;}).join('');}
+function renderrecs(t,pre,recs,unit){const e=document.getElementById(pre+'-recs');if(!recs.length){e.innerHTML='<div class="empty">还没有记录</div>';return;}e.innerHTML=recs.map((x,i)=>`<div class="record"><div class="record-info"><span>🕐</span><span class="record-time">${x.tm}</span></div><div style="display:flex;align-items:center;gap:10px"><span class="record-value">+${x.v}${unit}</span><button class="record-del" onclick="del('${t}',${i})">×</button></div></div>`).reverse().join('');}
+function renderhist(t,pre,goal,unit){const e=document.getElementById(pre+'-hist'),dates=Object.keys(D[t]).sort().reverse().slice(0,14);if(!dates.length){e.innerHTML='<div class="empty">暂无历史数据</div>';return;}e.innerHTML=dates.map(d=>{const tot=D[t][d].r.reduce((s,x)=>s+x.v,0),done=tot>=goal,ds=new Date(d).toLocaleDateString('zh-CN',{month:'short',day:'numeric'});return`<div class="hist"><span class="hist-date">📋 ${ds}</span><div style="display:flex;align-items:center;gap:12px"><span class="hist-val">${tot}${unit}</span><span class="hist-badge${done?' done':''}">${done?'达标':'未达标'}</span></div></div>`;}).join('');}
+function rendertrecs(recs){const e=document.getElementById('t-recs'),n={neck:'颈椎',belly:'腹部',knee:'膝盖'};if(!recs.length){e.innerHTML='<div class="empty">还没有记录</div>';return;}e.innerHTML=recs.map((x,i)=>`<div class="record"><div class="record-info"><span>🕐</span><span class="record-time">${x.tm} · ${n[x.part]}</span></div><div style="display:flex;align-items:center;gap:10px"><span class="record-value">+${x.v}分钟</span><button class="record-del" onclick="del('therapy',${i})">×</button></div></div>`).reverse().join('');}
+function renderthist(){const e=document.getElementById('t-hist'),dates=Object.keys(D.therapy).sort().reverse().slice(0,14);if(!dates.length){e.innerHTML='<div class="empty">暂无历史数据</div>';return;}e.innerHTML=dates.map(d=>{const p={neck:0,belly:0,knee:0};D.therapy[d].r.forEach(x=>p[x.part]+=x.v);const tot=p.neck+p.belly+p.knee,done=tot>=60,ds=new Date(d).toLocaleDateString('zh-CN',{month:'short',day:'numeric'});return`<div class="hist"><span class="hist-date">📋 ${ds}</span><div style="display:flex;align-items:center;gap:12px"><span class="hist-val">${tot}分钟</span><span class="hist-badge${done?' done':''}">${done?'达标':'未达标'}</span></div></div>`;}).join('');}
+function show(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
+init();
+</script>
+</body>
+</html>
