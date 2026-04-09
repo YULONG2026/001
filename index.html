@@ -1,199 +1,350 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <title>宇龙的健康记录器</title>
-    <style>
-        *{margin:0;padding:0;box-sizing:border-box}
-        :root{--bg:#f5f5f7;--card:rgba(255,255,255,0.72);--border:rgba(255,255,255,0.5);--blue:#007aff;--purple:#af52de;--cyan:#5ac8fa;--green:#34c759;--orange:#ff9500;--red:#ff3b30;--text:#1d1d1f;--text2:#86868b}
-        body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);padding-bottom:env(safe-area-inset-bottom)}
-        .nav{background:var(--card);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:12px 20px;padding-top:max(12px,env(safe-area-inset-top));position:sticky;top:0;z-index:100}
-        .nav-content{display:flex;align-items:center;justify-content:space-between}
-        .nav-title{font-size:20px;font-weight:600}
-        .tabs{display:flex;background:var(--card);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:8px 16px;gap:8px;overflow-x:auto}
-        .tabs::-webkit-scrollbar{display:none}
-        .tab{flex:1;min-width:80px;padding:10px 16px;border-radius:10px;font-size:14px;font-weight:500;text-align:center;cursor:pointer;background:transparent;color:var(--text2);border:none;white-space:nowrap}
-        .tab.active{background:#fff;color:var(--text);box-shadow:0 2px 8px rgba(0,0,0,0.08)}
-        .tab[data-tab="pushup"].active{color:var(--blue)}
-        .tab[data-tab="squat"].active{color:var(--purple)}
-        .tab[data-tab="therapy"].active{color:var(--cyan)}
-        .main{padding:20px;max-width:430px;margin:0 auto}
-        .section{margin-bottom:24px}
-        .section-title{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:12px;padding-left:4px}
-        .card{background:var(--card);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:20px;padding:20px;box-shadow:0 8px 32px rgba(0,0,0,0.08)}
-        .progress{display:flex;flex-direction:column;align-items:center;padding:24px 20px}
-        .ring-wrap{position:relative;width:180px;height:180px;margin-bottom:20px}
-        .ring{transform:rotate(-90deg)}
-        .ring-bg{fill:none;stroke:rgba(0,0,0,0.05);stroke-width:12}
-        .ring-fill{fill:none;stroke-width:12;stroke-linecap:round;transition:stroke-dashoffset 0.5s ease}
-        .ring-fill.pushup{stroke:var(--blue)}.ring-fill.squat{stroke:var(--purple)}.ring-fill.therapy{stroke:var(--cyan)}
-        .ring-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
-        .ring-icon{font-size:32px;margin-bottom:4px}
-        .ring-value{font-size:42px;font-weight:700}
-        .ring-goal{font-size:15px;color:var(--text2);margin-top:4px}
-        .status{font-size:13px;font-weight:600;margin-top:8px;padding:6px 14px;border-radius:20px}
-        .status.pushup{background:rgba(0,122,255,0.12);color:var(--blue)}
-        .status.squat{background:rgba(175,82,222,0.12);color:var(--purple)}
-        .status.therapy{background:rgba(90,200,250,0.12);color:var(--cyan)}
-        .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px}
-        .stat{text-align:center;padding:12px 8px;background:rgba(0,0,0,0.03);border-radius:12px}
-        .stat-icon{font-size:18px;margin-bottom:4px}
-        .stat-value{font-size:20px;font-weight:700}
-        .stat-label{font-size:11px;color:var(--text2);margin-top:2px}
-        .slots{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
-        .slot{padding:12px 4px;border-radius:12px;text-align:center;background:rgba(0,0,0,0.03)}
-        .slot.done{background:var(--green);color:#fff}
-        .slot-time{font-size:11px;font-weight:600;opacity:0.8}
-        .slot-count{font-size:14px;font-weight:700;margin-top:2px}
-        .input{display:flex;flex-direction:column;gap:16px}
-        .stepper{display:flex;align-items:center;justify-content:center;gap:20px}
-        .stepper-btn{width:44px;height:44px;border-radius:12px;border:none;font-size:24px;cursor:pointer;background:rgba(0,0,0,0.05)}
-        .stepper-value{font-size:48px;font-weight:700;min-width:100px;text-align:center}
-        .chips{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
-        .chip{padding:8px 16px;border-radius:20px;font-size:14px;font-weight:500;cursor:pointer;border:1px solid rgba(0,0,0,0.1);background:transparent;color:var(--text2)}
-        .chip.pushup.active,.chip.pushup:hover{background:var(--blue);color:#fff;border-color:var(--blue)}
-        .chip.squat.active,.chip.squat:hover{background:var(--purple);color:#fff;border-color:var(--purple)}
-        .chip.therapy.active,.chip.therapy:hover{background:var(--cyan);color:#fff;border-color:var(--cyan)}
-        .parts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:12px}
-        .part{padding:10px 16px;border-radius:20px;font-size:14px;font-weight:500;cursor:pointer;border:1px solid rgba(0,0,0,0.1);background:transparent;display:flex;align-items:center;gap:6px}
-        .part.selected{background:var(--cyan);color:#fff;border-color:var(--cyan)}
-        .part-progress{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px}
-        .part-item{text-align:center;padding:12px 8px;background:rgba(0,0,0,0.03);border-radius:12px}
-        .part-item.done{background:var(--green);color:#fff}
-        .part-name{font-size:12px;font-weight:600;margin-bottom:4px}
-        .part-time{font-size:16px;font-weight:700}
-        .btn{width:100%;padding:16px;border-radius:14px;font-size:17px;font-weight:600;border:none;cursor:pointer;color:#fff;margin-top:8px}
-        .btn.pushup{background:var(--blue)}.btn.squat{background:var(--purple)}.btn.therapy{background:var(--cyan)}
-        .records{display:flex;flex-direction:column;gap:8px}
-        .record{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:rgba(0,0,0,0.03);border-radius:12px}
-        .record-info{display:flex;align-items:center;gap:10px}
-        .record-time{font-size:13px;color:var(--text2)}
-        .record-value{font-size:16px;font-weight:600}
-        .record-del{width:28px;height:28px;border-radius:8px;border:none;background:rgba(255,59,48,0.1);color:var(--red);cursor:pointer;font-size:16px}
-        .history{display:flex;flex-direction:column;gap:10px}
-        .hist{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:rgba(0,0,0,0.03);border-radius:12px}
-        .hist-date{font-size:15px;font-weight:600}
-        .hist-val{font-size:17px;font-weight:700}
-        .hist-badge{font-size:11px;padding:4px 10px;border-radius:12px;font-weight:600;background:var(--orange);color:#fff}
-        .hist-badge.done{background:var(--green)}
-        .toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(100px);background:rgba(0,0,0,0.8);backdrop-filter:blur(20px);color:#fff;padding:14px 24px;border-radius:14px;font-size:15px;font-weight:500;opacity:0;transition:all 0.3s;z-index:1000;pointer-events:none}
-        .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
-        .empty{text-align:center;padding:40px 20px;color:var(--text2);font-size:14px}
-        .hide{display:none!important}
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>小瓜地理冲冲冲</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=SF+Pro+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <nav class="nav"><div class="nav-content"><span style="font-size:24px">💪</span><h1 class="nav-title">宇龙的健康记录器</h1><span style="width:24px"></span></div></nav>
-    <div class="tabs">
-        <button class="tab active" data-tab="pushup">💪 俯卧撑</button>
-        <button class="tab" data-tab="squat">🦵 深蹲</button>
-        <button class="tab" data-tab="therapy">💡 理疗</button>
-    </div>
-    <main class="main">
-        <!-- Pushup -->
-        <div id="pushup-section" class="tab-content">
-            <div class="section">
-                <div class="card progress">
-                    <div class="ring-wrap">
-                        <svg class="ring" width="180" height="180"><circle class="ring-bg" cx="90" cy="90" r="78"/><circle class="ring-fill pushup" cx="90" cy="90" r="78" stroke-dasharray="490" stroke-dashoffset="490"/></svg>
-                        <div class="ring-center"><div class="ring-icon">💪</div><div class="ring-value" id="p-val">0</div><div class="ring-goal">/ 200 个</div></div>
-                    </div>
-                    <div class="status pushup" id="p-status">继续加油 💪</div>
-                    <div class="stats">
-                        <div class="stat"><div class="stat-icon">🎯</div><div class="stat-value" id="p-rem">200</div><div class="stat-label">剩余</div></div>
-                        <div class="stat"><div class="stat-icon">📊</div><div class="stat-value" id="p-pct">0%</div><div class="stat-label">完成率</div></div>
-                        <div class="stat"><div class="stat-icon">🔥</div><div class="stat-value" id="p-ses">0</div><div class="stat-label">组数</div></div>
-                    </div>
-                </div>
-            </div>
-            <div class="section"><div class="section-title">⏰ 今日时间格 (每2小时20个)</div><div class="card"><div class="slots" id="p-slots"></div></div></div>
-            <div class="section"><div class="section-title">📝 记录俯卧撑</div><div class="card input">
-                <div class="stepper"><button class="stepper-btn" onclick="adj('p',-10)">−</button><div class="stepper-value" id="p-inp">20</div><button class="stepper-btn" onclick="adj('p',10)">+</button></div>
-                <div class="chips"><button class="chip pushup" onclick="setv('p',10)">10</button><button class="chip pushup active" onclick="setv('p',20)">20</button><button class="chip pushup" onclick="setv('p',30)">30</button><button class="chip pushup" onclick="setv('p',50)">50</button></div>
-                <button class="btn pushup" onclick="add('pushup')">✓ 记录俯卧撑</button>
-            </div></div>
-            <div class="section"><div class="section-title">📋 今日记录</div><div class="card"><div class="records" id="p-recs"><div class="empty">还没有记录，开始动起来吧！</div></div></div></div>
-            <div class="section"><div class="section-title">📅 历史记录</div><div class="card"><div class="history" id="p-hist"><div class="empty">暂无历史数据</div></div></div></div>
+  <div id="app">
+    <!-- 状态栏占位 -->
+    <div class="status-bar"></div>
+
+    <!-- TabBar -->
+    <nav class="tabbar" id="tabbar">
+      <div class="tab-item active" data-tab="home">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+          <polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+        <span class="tab-text">首页</span>
+      </div>
+      <div class="tab-item" data-tab="report">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 20V10M12 20V4M6 20v-6"/>
+        </svg>
+        <span class="tab-text">报告</span>
+      </div>
+      <div class="tab-item" data-tab="wrong">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="9" y1="15" x2="15" y2="15"/>
+        </svg>
+        <span class="tab-text">错题</span>
+        <span class="badge" id="wrongBadge">0</span>
+      </div>
+      <div class="tab-item" data-tab="profile">
+        <svg class="tab-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+          <circle cx="12" cy="7" r="4"/>
+        </svg>
+        <span class="tab-text">我的</span>
+      </div>
+    </nav>
+
+    <!-- 页面容器 -->
+    <main class="main-content">
+      <!-- 首页 -->
+      <section class="page active" id="page-home">
+        <div class="header-section">
+          <div class="app-logo">
+            <svg viewBox="0 0 40 40" fill="none">
+              <circle cx="20" cy="20" r="20" fill="url(#logoGradient)"/>
+              <path d="M20 8L24 16H16L20 8Z" fill="#fff"/>
+              <circle cx="20" cy="24" r="6" stroke="#fff" stroke-width="2" fill="none"/>
+              <path d="M20 18V24L23 27" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+              <defs>
+                <linearGradient id="logoGradient" x1="0" y1="0" x2="40" y2="40">
+                  <stop offset="0%" stop-color="#007AFF"/>
+                  <stop offset="100%" stop-color="#5856D6"/>
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+          <h1 class="app-title">小瓜地理冲冲冲</h1>
         </div>
-        <!-- Squat -->
-        <div id="squat-section" class="tab-content hide">
-            <div class="section">
-                <div class="card progress">
-                    <div class="ring-wrap">
-                        <svg class="ring" width="180" height="180"><circle class="ring-bg" cx="90" cy="90" r="78"/><circle class="ring-fill squat" cx="90" cy="90" r="78" stroke-dasharray="490" stroke-dashoffset="490"/></svg>
-                        <div class="ring-center"><div class="ring-icon">🦵</div><div class="ring-value" id="s-val">0</div><div class="ring-goal">/ 200 个</div></div>
-                    </div>
-                    <div class="status squat" id="s-status">继续加油 🦵</div>
-                    <div class="stats">
-                        <div class="stat"><div class="stat-icon">🎯</div><div class="stat-value" id="s-rem">200</div><div class="stat-label">剩余</div></div>
-                        <div class="stat"><div class="stat-icon">📊</div><div class="stat-value" id="s-pct">0%</div><div class="stat-label">完成率</div></div>
-                        <div class="stat"><div class="stat-icon">🔥</div><div class="stat-value" id="s-ses">0</div><div class="stat-label">组数</div></div>
-                    </div>
-                </div>
+
+        <div class="streak-card">
+          <div class="streak-glow"></div>
+          <div class="streak-content">
+            <div class="streak-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+              </svg>
             </div>
-            <div class="section"><div class="section-title">⏰ 今日时间格 (每2小时20个)</div><div class="card"><div class="slots" id="s-slots"></div></div></div>
-            <div class="section"><div class="section-title">📝 记录深蹲</div><div class="card input">
-                <div class="stepper"><button class="stepper-btn" onclick="adj('s',-10)">−</button><div class="stepper-value" id="s-inp">20</div><button class="stepper-btn" onclick="adj('s',10)">+</button></div>
-                <div class="chips"><button class="chip squat" onclick="setv('s',10)">10</button><button class="chip squat active" onclick="setv('s',20)">20</button><button class="chip squat" onclick="setv('s',30)">30</button><button class="chip squat" onclick="setv('s',50)">50</button></div>
-                <button class="btn squat" onclick="add('squat')">✓ 记录深蹲</button>
-            </div></div>
-            <div class="section"><div class="section-title">📋 今日记录</div><div class="card"><div class="records" id="s-recs"><div class="empty">还没有记录，开始动起来吧！</div></div></div></div>
-            <div class="section"><div class="section-title">📅 历史记录</div><div class="card"><div class="history" id="s-hist"><div class="empty">暂无历史数据</div></div></div></div>
-        </div>
-        <!-- Therapy -->
-        <div id="therapy-section" class="tab-content hide">
-            <div class="section">
-                <div class="card progress">
-                    <div class="ring-wrap">
-                        <svg class="ring" width="180" height="180"><circle class="ring-bg" cx="90" cy="90" r="78"/><circle class="ring-fill therapy" cx="90" cy="90" r="78" stroke-dasharray="490" stroke-dashoffset="490"/></svg>
-                        <div class="ring-center"><div class="ring-icon">💡</div><div class="ring-value" id="t-val">0</div><div class="ring-goal">/ 60 分钟</div></div>
-                    </div>
-                    <div class="status therapy" id="t-status">开始理疗 💡</div>
-                    <div class="part-progress">
-                        <div class="part-item" id="t-neck"><div class="part-name">🦴 颈椎</div><div class="part-time">0/20</div></div>
-                        <div class="part-item" id="t-belly"><div class="part-name">🫃 腹部</div><div class="part-time">0/20</div></div>
-                        <div class="part-item" id="t-knee"><div class="part-name">🦵 膝盖</div><div class="part-time">0/20</div></div>
-                    </div>
-                </div>
+            <div class="streak-info">
+              <span class="streak-num" id="streakDays">0</span>
+              <span class="streak-label">天连续打卡</span>
             </div>
-            <div class="section"><div class="section-title">📝 记录理疗</div><div class="card input">
-                <div class="parts"><button class="part" data-part="neck" onclick="sel('neck')">🦴 颈椎</button><button class="part" data-part="belly" onclick="sel('belly')">🫃 腹部</button><button class="part" data-part="knee" onclick="sel('knee')">🦵 膝盖</button></div>
-                <div class="stepper"><button class="stepper-btn" onclick="adj('t',-5)">−</button><div class="stepper-value" id="t-inp">20</div><button class="stepper-btn" onclick="adj('t',5)">+</button></div>
-                <div class="chips"><button class="chip therapy" onclick="setv('t',10)">10</button><button class="chip therapy active" onclick="setv('t',20)">20</button><button class="chip therapy" onclick="setv('t',30)">30</button></div>
-                <button class="btn therapy" onclick="addt()">✓ 记录理疗</button>
-            </div></div>
-            <div class="section"><div class="section-title">📋 今日记录</div><div class="card"><div class="records" id="t-recs"><div class="empty">还没有记录，开始理疗吧！</div></div></div></div>
-            <div class="section"><div class="section-title">📅 历史记录</div><div class="card"><div class="history" id="t-hist"><div class="empty">暂无历史数据</div></div></div></div>
+          </div>
         </div>
+
+        <div class="progress-card">
+          <div class="progress-header">
+            <span class="progress-title">今日目标</span>
+            <span class="progress-count" id="todayProgress">0/7</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressBar"></div>
+          </div>
+          <p class="progress-tip">距离高考 <span id="daysToGaokao">58</span> 天</p>
+        </div>
+
+        <button class="start-btn" id="startBtn">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="5 3 19 12 5 21 5 3"/>
+          </svg>
+          开始刷题
+        </button>
+
+        <div class="quick-stats">
+          <div class="stat-card">
+            <span class="stat-value" id="totalAccuracy">0%</span>
+            <span class="stat-label">正确率</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="totalQuestions">22道题</span>
+            <span class="stat-label">题库容量</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value" id="wrongCountHome">0</span>
+            <span class="stat-label">待复习</span>
+          </div>
+        </div>
+
+        <div class="wrong-reminder" id="wrongTip" style="display:none;">
+          <div class="reminder-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+          </div>
+          <span>你有 <span class="highlight">0</span> 道错题待复习</span>
+          <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"/>
+          </svg>
+        </div>
+      </section>
+
+      <!-- 答题页 -->
+      <section class="page" id="page-quiz">
+        <div class="quiz-header">
+          <button class="close-btn" id="closeQuiz">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+          <div class="quiz-progress">
+            <div class="quiz-progress-bar">
+              <div class="quiz-progress-fill" id="quizProgressFill"></div>
+            </div>
+            <span class="quiz-progress-text" id="quizProgressText">1 / 7</span>
+          </div>
+        </div>
+
+        <div class="quiz-content">
+          <div class="question-meta" id="questionTags"></div>
+          <div class="stem-card">
+            <p class="stem-text" id="stem"></p>
+          </div>
+          <div class="options" id="options"></div>
+          <div class="explanation" id="explanation">
+            <div class="explanation-header">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <path d="M12 16v-4M12 8h.01"/>
+              </svg>
+              <span>解析</span>
+            </div>
+            <p id="explanationText"></p>
+          </div>
+        </div>
+      </section>
+
+      <!-- 结果页 -->
+      <section class="page" id="page-result">
+        <div class="result-header">
+          <div class="result-icon" id="resultIcon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <h2 class="result-title" id="resultTitle">太棒了！</h2>
+          <p class="result-subtitle" id="resultSubtitle">继续保持！</p>
+        </div>
+
+        <div class="result-card">
+          <div class="accuracy-display">
+            <span class="accuracy-num" id="resultAccuracy">0%</span>
+            <span class="accuracy-label">正确率</span>
+          </div>
+          <div class="result-breakdown">
+            <div class="breakdown-item">
+              <span class="breakdown-num correct" id="resultCorrect">0</span>
+              <span class="breakdown-label">正确</span>
+            </div>
+            <div class="breakdown-divider"></div>
+            <div class="breakdown-item">
+              <span class="breakdown-num wrong" id="resultWrong">0</span>
+              <span class="breakdown-label">错误</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="streak-banner">
+          <div class="streak-badge">
+            <svg viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </div>
+          <div class="streak-details">
+            <span class="streak-count" id="resultStreak">0</span>
+            <span class="streak-text">天连续打卡</span>
+          </div>
+        </div>
+
+        <div class="result-actions">
+          <button class="btn-primary" id="backHomeBtn">返回首页</button>
+          <button class="btn-secondary" id="viewReportBtn">查看报告</button>
+        </div>
+      </section>
+
+      <!-- 报告页 -->
+      <section class="page" id="page-report">
+        <h2 class="page-title">学习报告</h2>
+
+        <div class="summary-grid">
+          <div class="summary-item">
+            <span class="summary-num" id="reportTotal">0</span>
+            <span class="summary-label">累计刷题</span>
+          </div>
+          <div class="summary-item highlight">
+            <span class="summary-num" id="reportAccuracy">0%</span>
+            <span class="summary-label">总正确率</span>
+          </div>
+          <div class="summary-item">
+            <span class="summary-num" id="reportStreak">0</span>
+            <span class="summary-label">连续打卡</span>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3 class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            分类正确率
+          </h3>
+          <div class="category-list" id="categoryList"></div>
+        </div>
+
+        <div class="section-card warning">
+          <h3 class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            薄弱知识点
+          </h3>
+          <div class="weak-list" id="weakList"></div>
+        </div>
+
+        <div class="suggestion-card">
+          <div class="suggestion-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 1 1 7.072 0l-.548.547A3.374 3.374 0 0 0 14 18.469V19a2 2 0 1 1-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/>
+            </svg>
+          </div>
+          <p class="suggestion-text" id="suggestion"></p>
+        </div>
+      </section>
+
+      <!-- 错题本页 -->
+      <section class="page" id="page-wrong">
+        <h2 class="page-title">错题本</h2>
+
+        <div class="empty-state" id="wrongEmpty">
+          <div class="empty-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+          </div>
+          <p class="empty-title">太棒了！</p>
+          <p class="empty-desc">暂无错题，保持下去！</p>
+        </div>
+
+        <div class="wrong-list" id="wrongList"></div>
+
+        <button class="batch-btn" id="reviewAllBtn" style="display:none;">批量复习错题</button>
+      </section>
+
+      <!-- 个人中心 -->
+      <section class="page" id="page-profile">
+        <div class="profile-header">
+          <div class="profile-avatar">
+            <svg viewBox="0 0 40 40" fill="none">
+              <circle cx="20" cy="20" r="20" fill="rgba(255,255,255,0.2)"/>
+              <circle cx="20" cy="16" r="8" stroke="#fff" stroke-width="2" fill="none"/>
+              <path d="M6 36c0-8 6-14 14-14s14 6 14 14" stroke="#fff" stroke-width="2" fill="none"/>
+            </svg>
+          </div>
+          <p class="profile-name">小瓜学习者</p>
+          <p class="profile-since">加入于 <span id="joinDate">今天</span></p>
+        </div>
+
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <span class="pstat-num" id="profileTotal">0</span>
+            <span class="pstat-label">累计刷题</span>
+          </div>
+          <div class="profile-stat">
+            <span class="pstat-num" id="profileAccuracy">0%</span>
+            <span class="pstat-label">总正确率</span>
+          </div>
+          <div class="profile-stat">
+            <span class="pstat-num" id="profileStreak">0</span>
+            <span class="pstat-label">连续打卡</span>
+          </div>
+          <div class="profile-stat">
+            <span class="pstat-num" id="profileWrong">0</span>
+            <span class="pstat-label">错题数</span>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <h3 class="section-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="8" r="7"/>
+              <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>
+            </svg>
+            成就徽章
+          </h3>
+          <div class="achievement-list" id="achievementList"></div>
+        </div>
+
+        <button class="clear-btn" id="clearDataBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+          </svg>
+          清除学习数据
+        </button>
+      </section>
     </main>
-    <div class="toast" id="toast"></div>
-    <script>
-const CFG={pushup:{g:200,int:20,slots:['07:00','09:00','11:00','13:00','15:00','17:00','19:00','21:00']},squat:{g:200,int:20,slots:['07:00','09:00','11:00','13:00','15:00','17:00','19:00','21:00']},therapy:{g:60,parts:{neck:20,belly:20,knee:20}}};
-let cur='pushup',selp=null,D=JSON.parse(localStorage.getItem('ht'))||{pushup:{},squat:{},therapy:{}};
-function init(){document.querySelectorAll('.tab').forEach(t=>t.onclick=()=>switchTab(t.dataset.tab));render();if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();}
-function switchTab(t){cur=t;document.querySelectorAll('.tab').forEach(x=>x.classList.toggle('active',x.dataset.tab===t));document.querySelectorAll('.tab-content').forEach(x=>x.classList.toggle('hide',x.id!==t+'-section'));render();}
-function today(){return new Date().toISOString().split('T')[0];}
-function getD(t){const d=today();if(!D[t][d])D[t][d]={r:[]};return D[t][d];}
-function adj(t,d){const e=document.getElementById(t+'-inp'),v=Math.max(1,parseInt(e.textContent)+d);e.textContent=v;updch(t,v);}
-function setv(t,v){document.getElementById(t+'-inp').textContent=v;updch(t,v);}
-function updch(t,v){document.querySelectorAll('.chip.'+(t==='p'?'pushup':t==='s'?'squat':'therapy')).forEach(c=>c.classList.toggle('active',parseInt(c.textContent)===v));}
-function sel(p){selp=selp===p?null:p;document.querySelectorAll('.part').forEach(x=>x.classList.toggle('selected',x.dataset.part===selp));}
-function add(t){const v=parseInt(document.getElementById(t==='pushup'?'p-inp':'s-inp').textContent),d=getD(t);d.r.push({tm:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}),v,ts:Date.now()});save();render();show('已记录 '+v+(t==='pushup'?'个俯卧撑':'个深蹲'));}
-function addt(){if(!selp){show('请先选择部位');return;}const v=parseInt(document.getElementById('t-inp').textContent),d=getD('therapy');d.r.push({tm:new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}),v,part:selp,ts:Date.now()});save();render();const n={neck:'颈椎',belly:'腹部',knee:'膝盖'};show('已记录 '+n[selp]+'理疗'+v+'分钟');}
-function del(t,i){getD(t).r.splice(i,1);save();render();show('已删除');}
-function save(){localStorage.setItem('ht',JSON.stringify(D));}
-function render(){renderPS('pushup','p');renderPS('squat','s');renderT();}
-function renderPS(t,pre){const d=getD(t),tot=d.r.reduce((s,x)=>s+x.v,0),pct=Math.min(100,(tot/CFG[t].g)*100);document.getElementById(pre+'-val').textContent=tot;document.getElementById(pre+'-rem').textContent=Math.max(0,CFG[t].g-tot);document.getElementById(pre+'-pct').textContent=Math.round(pct)+'%';document.getElementById(pre+'-ses').textContent=d.r.length;document.querySelector('.ring-fill.'+t).style.strokeDashoffset=490-(490*pct/100);const st=document.getElementById(pre+'-status');if(tot>=CFG[t].g){st.textContent='🎉 目标达成！';st.style.cssText='background:rgba(52,199,89,0.2);color:var(--green)';}else{st.textContent='继续加油 '+(t==='pushup'?'💪':'🦵');st.className='status '+t;}renderslots(t,pre,d.r);renderrecs(t,pre,d.r,t==='pushup'?'个':'个');renderhist(t,pre,CFG[t].g,t==='pushup'?'个':'个');}
-function renderT(){const d=getD('therapy'),p={neck:0,belly:0,knee:0};d.r.forEach(x=>p[x.part]+=x.v);const tot=p.neck+p.belly+p.knee,pct=Math.min(100,(tot/CFG.therapy.g)*100);document.getElementById('t-val').textContent=tot;document.querySelector('.ring-fill.therapy').style.strokeDashoffset=490-(490*pct/100);const st=document.getElementById('t-status');if(tot>=CFG.therapy.g){st.textContent='🎉 全部完成！';st.style.cssText='background:rgba(52,199,89,0.2);color:var(--green)';}else{st.textContent='继续理疗 💡';st.className='status therapy';}['neck','belly','knee'].forEach(x=>{const e=document.getElementById('t-'+x);e.querySelector('.part-time').textContent=p[x]+'/20';e.classList.toggle('done',p[x]>=20);});rendertrecs(d.r);renderthist();}
-function renderslots(t,pre,recs){const slots=CFG[t].slots;document.getElementById(pre+'-slots').innerHTML=slots.map((tm,i)=>{const st=7+i*2,rs=recs.filter(x=>{const h=parseInt(x.tm.split(':')[0]);return h>=st&&h<st+2;}),cnt=rs.reduce((s,x)=>s+x.v,0),done=cnt>=CFG[t].int;return`<div class="slot${done?' done':''}"><div class="slot-time">${tm}</div><div class="slot-count">${cnt}</div></div>`;}).join('');}
-function renderrecs(t,pre,recs,unit){const e=document.getElementById(pre+'-recs');if(!recs.length){e.innerHTML='<div class="empty">还没有记录</div>';return;}e.innerHTML=recs.map((x,i)=>`<div class="record"><div class="record-info"><span>🕐</span><span class="record-time">${x.tm}</span></div><div style="display:flex;align-items:center;gap:10px"><span class="record-value">+${x.v}${unit}</span><button class="record-del" onclick="del('${t}',${i})">×</button></div></div>`).reverse().join('');}
-function renderhist(t,pre,goal,unit){const e=document.getElementById(pre+'-hist'),dates=Object.keys(D[t]).sort().reverse().slice(0,14);if(!dates.length){e.innerHTML='<div class="empty">暂无历史数据</div>';return;}e.innerHTML=dates.map(d=>{const tot=D[t][d].r.reduce((s,x)=>s+x.v,0),done=tot>=goal,ds=new Date(d).toLocaleDateString('zh-CN',{month:'short',day:'numeric'});return`<div class="hist"><span class="hist-date">📋 ${ds}</span><div style="display:flex;align-items:center;gap:12px"><span class="hist-val">${tot}${unit}</span><span class="hist-badge${done?' done':''}">${done?'达标':'未达标'}</span></div></div>`;}).join('');}
-function rendertrecs(recs){const e=document.getElementById('t-recs'),n={neck:'颈椎',belly:'腹部',knee:'膝盖'};if(!recs.length){e.innerHTML='<div class="empty">还没有记录</div>';return;}e.innerHTML=recs.map((x,i)=>`<div class="record"><div class="record-info"><span>🕐</span><span class="record-time">${x.tm} · ${n[x.part]}</span></div><div style="display:flex;align-items:center;gap:10px"><span class="record-value">+${x.v}分钟</span><button class="record-del" onclick="del('therapy',${i})">×</button></div></div>`).reverse().join('');}
-function renderthist(){const e=document.getElementById('t-hist'),dates=Object.keys(D.therapy).sort().reverse().slice(0,14);if(!dates.length){e.innerHTML='<div class="empty">暂无历史数据</div>';return;}e.innerHTML=dates.map(d=>{const p={neck:0,belly:0,knee:0};D.therapy[d].r.forEach(x=>p[x.part]+=x.v);const tot=p.neck+p.belly+p.knee,done=tot>=60,ds=new Date(d).toLocaleDateString('zh-CN',{month:'short',day:'numeric'});return`<div class="hist"><span class="hist-date">📋 ${ds}</span><div style="display:flex;align-items:center;gap:12px"><span class="hist-val">${tot}分钟</span><span class="hist-badge${done?' done':''}">${done?'达标':'未达标'}</span></div></div>`;}).join('');}
-function show(m){const t=document.getElementById('toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500);}
-init();
-</script>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
